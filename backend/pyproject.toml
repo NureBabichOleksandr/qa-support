@@ -1,0 +1,44 @@
+[project]
+name = "qa-support-backend"
+version = "0.1.0"
+description = "FastAPI backend for the QA_Support database (SSDB lab 3)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "aioodbc>=0.5",
+    "pydantic-settings>=2.6",
+    "httpx>=0.28",
+    "alembic>=1.20.1",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.25", "ruff>=0.8", "mypy>=1.13"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # кирилиця в коментарях — не помилка
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501"]  # дослівні SQL-тексти з лаб
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]  # папка alembic/ інакше вважається first-party
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]

@@ -1,0 +1,19 @@
+{
+  "name": "qa-support",
+  "private": true,
+  "scripts": {
+    "backend:build": "docker compose build api",
+    "backend:start": "docker compose up -d api",
+    "db:pull": "docker compose pull db",
+    "db:start": "docker compose up -d db",
+    "up": "docker compose up -d --build",
+    "down": "docker compose down",
+    "reset": "docker compose down -v && docker compose up -d --build",
+    "logs": "docker compose logs -f",
+    "logs:api": "docker compose logs -f api",
+    "logs:db": "docker compose logs -f db",
+    "migrate": "docker compose exec api alembic upgrade head",
+    "migrate:current": "docker compose exec api alembic current",
+    "migrate:down": "docker compose exec api alembic downgrade -1"
+  }
+}
