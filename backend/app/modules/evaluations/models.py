@@ -3,9 +3,12 @@ from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.mssql import DATETIME2
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base
+from app.modules.prompt_blocks.models import PromptBlock
+from app.modules.tickets.models import TicketSlaCache
+from app.modules.topics.models import CanonicalTopic
 
 Score: sa.DECIMAL[Decimal] = sa.DECIMAL(4, 1)
 
@@ -52,6 +55,16 @@ class QaEvaluation(Base):
     case_ownership_score: Mapped[Decimal | None] = mapped_column(Score, nullable=True)
     technical_quality_score: Mapped[Decimal | None] = mapped_column(Score, nullable=True)
     communication_quality_score: Mapped[Decimal | None] = mapped_column(Score, nullable=True)
+
+
+    topic: Mapped[CanonicalTopic | None] = relationship(lazy="raise")
+    ticket: Mapped[TicketSlaCache | None] = relationship(lazy="raise")
+    prompt_blocks: Mapped[list[PromptBlock]] = relationship(
+        secondary="qa_evaluation_prompt_block",
+        order_by=PromptBlock.prompt_block_id,
+        lazy="raise",
+        viewonly=True,  # рядки звʼязку пише QaEvaluationPromptBlock
+    )
 
 
 class QaEvaluationPromptBlock(Base):

@@ -10,8 +10,26 @@ FastAPI + async SQLAlchemy (`mssql+aioodbc`) + Alembic. Схема БД ЛР1–
 | `0002` | ЛР1, дод. Б — початкові дані (20 тем, 10 блоків, 30 тікетів, 40 оцінок, 99 звʼязків) |
 | `0003` | ЛР1, дод. В–Е — `TOP_TOPIC_BY_AGENT_NAME`, `SET_TOPIC_PRIORITY`, `MAX_EVALUATION_BY_TOPIC`, `SET_TOP_ORGANIZATION_FOR_TOPIC` |
 | `0004` | ЛР2 — `qa_evaluation_copy`, `tags` → `NVARCHAR(MAX)`, тригери `tr_qa_evaluation_copy_score`, `tr_qa_evaluation_add_to_ticket` |
+| `0005` | Скалярна функція `req_count_by_agnet_NAME` |
 
 Дані йдуть до тригерів, тому початкові INSERT-и не пишуть номери оцінок у `tags`.
+
+## Ендпоінти ЛР3 (`/api/v1`, Swagger: `/docs`)
+
+| Пункт ЛР3 | Метод і шлях | Що в БД |
+|---|---|---|
+| 1. Таблиці | `GET /topics`, `/topics/{id}`, `/tickets`, `/tickets/{id}`, `/tickets/agents`, `/prompt-blocks`, `/prompt-blocks/{id}`, `/evaluations` | таблиці (пагінація `page`, `limit`, фільтри) |
+| 1. Повʼязані таблиці | `GET /evaluations/{id}` | оцінка + тема + тікет + блоки промпту (M:N) |
+| 1. Повʼязані таблиці | `GET /evaluations?ticket_id=…` / `?canonical_topic_id=…` / `?agent_name=…` | оцінки тікета/теми/агента з темою й тікетом |
+| 2. Процедура | `POST /topics/priority` `{topic_label, priority_percent}` | `SET_TOPIC_PRIORITY` |
+| 2. Процедура | `POST /topics/top-organization` `{topic_label}` | `SET_TOP_ORGANIZATION_FOR_TOPIC` (код 1 → 404, 2 → 409) |
+| 3. Скалярна функція | `GET /tickets/agents/{agent_name}/evaluated-tickets-count` | `req_count_by_agnet_NAME` |
+| 3. Таблична функція | `GET /topics/top-by-agent?agent_name=…` | `TOP_TOPIC_BY_AGENT_NAME` |
+| 3. Таблична функція | `GET /evaluations/max-by-topic?topic_label=…` | `MAX_EVALUATION_BY_TOPIC` |
+| 4. Виняток з БД | `POST /topics/priority` з `topic_label: " "` | `THROW 50001` → `400 {"detail", "source": "database", "error_number": 50001}` |
+
+Будь-який `THROW`/`RAISERROR` з номером ≥ 50000 обробляє глобальний обробник у `app/main.py`
+(`app/core/db_errors.py` дістає номер і текст помилки SQL Server). Інші помилки БД → 500.
 
 ## Запуск у Docker (нічого, крім Docker, не потрібно)
 

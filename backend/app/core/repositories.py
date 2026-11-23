@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.interfaces import ORMOption
 
 from app.core.models import Base
 
@@ -29,6 +30,19 @@ class BaseRepository[ModelType: Base]:
     async def count(self) -> int:
         result = await self.session.execute(select(func.count()).select_from(self.model))
         return result.scalar_one()
+
+    async def paginate(
+        self,
+        stmt: Select[ModelType],
+        *,
+        skip: int,
+        limit: int,
+        options: Sequence[ORMOption] = (),
+    ) -> tuple[Sequence[ModelType], int]:
+        count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+        total = (await self.session.execute(count_stmt)).scalar_one()
+        result = await self.session.execute(stmt.options(*options).offset(skip).limit(limit))
+        return result.scalars().unique().all(), total
 
     async def create(self, **kwargs: Any) -> ModelType:
         instance = self.model(**kwargs)
